@@ -1,444 +1,288 @@
 <!DOCTYPE html>
-<html lang="zh-HK">
+<html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-  <title>🐣 可愛默書 Dictation</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>抽籤開始，祝你好運</title>
   <style>
-    /* 固定 px，確保手機/桌面一致 */
-    html, body { font-size: 18px; line-height: 1.5; }
-    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, "PingFang HK", "PingFang TC", "Microsoft JhengHei", sans-serif; background: linear-gradient(135deg,#fdf2ff,#e6f7ff); }
-    .wrap { max-width: 960px; margin: 0 auto; padding: 16px; }
+    :root {
+      --bg-1: #091226;
+      --bg-2: #0b1633;
+      --primary: #00ffd0;   /* 更明亮的主色 */
+      --primary-2: #66b3ff; /* 輔助亮藍 */
+      --accent: #ff66f5;    /* 亮粉紫 */
+      --card: rgba(255,255,255,0.08);
+      --card-border: rgba(255,255,255,0.16);
+      --text: #f2f7ff;
+      --muted: #a6b7e6;
+      --danger: #ff6b6b;
+      --chip-bg: rgba(255,255,255,0.12);
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "PingFang TC", "Noto Sans TC", Arial, sans-serif;
+      color: var(--text);
+      background: radial-gradient(1200px 800px at 10% 10%, #132257 0%, transparent 60%),
+                  radial-gradient(1200px 800px at 90% 90%, #18255a 0%, transparent 60%),
+                  linear-gradient(135deg, var(--bg-1), var(--bg-2));
+      overflow-x: hidden;
+    }
+    .grid-overlay::before, .grid-overlay::after { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+    .grid-overlay::before {
+      background-image: linear-gradient(rgba(255,255,255,0.09) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(255,255,255,0.09) 1px, transparent 1px);
+      background-size: 40px 40px, 40px 40px; mix-blend-mode: overlay;
+      mask-image: radial-gradient(circle at center, rgba(255,255,255,0.6), transparent 70%);
+    }
+    .grid-overlay::after { background: repeating-linear-gradient( to bottom, rgba(255,255,255,0.06) 0 2px, transparent 2px 6px ); animation: scan 6s linear infinite; }
+    @keyframes scan { 0% { transform: translateY(-100vh); } 100% { transform: translateY(100vh);} }
 
-    /* 可愛卡片風格 */
-    .card { background: #fff; border-radius: 16px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); padding: 16px; margin: 12px 0; }
-    .header { display:flex; align-items:center; gap:12px; }
-    .title { font-size: 26px; font-weight: 800; }
-    .chip { display:inline-block; padding: 4px 10px; border-radius: 999px; background:#ffeef7; color:#d63384; font-size: 14px; }
+    header { position: relative; z-index: 1; max-width: 1100px; margin: 32px auto 12px; padding: 0 16px; display: flex; align-items: center; justify-content: space-between; }
+    .brand { font-size: 22px; letter-spacing: 0.04em; font-weight: 800; text-shadow: 0 0 10px rgba(0,255,208,0.7); }
+    .brand .glow { color: var(--primary); text-shadow: 0 0 16px rgba(0,255,208,0.95), 0 0 42px rgba(0,255,208,0.5); }
 
-    .row { display:flex; flex-wrap: wrap; gap:12px; align-items:center; margin: 10px 0; }
-    textarea { width:100%; height: 160px; box-sizing:border-box; font-size:18px; padding:12px; border-radius:12px; border:2px solid #ffe3f0; background:#fff8fb; }
+    .panel { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto 36px; padding: 16px; }
+    .card { background: var(--card); border: 1px solid var(--card-border); border-radius: 16px; backdrop-filter: blur(10px); box-shadow: 0 0 0 1px rgba(0,255,208,0.2), 0 20px 60px rgba(0,0,0,0.45), inset 0 0 50px rgba(0,255,208,0.08); }
 
-    .btn { font-size:18px; padding:12px 20px; min-width:120px; min-height:48px; border:none; border-radius:12px; color:#fff; background:#ff7aa2; cursor:pointer; box-shadow: 0 4px 12px rgba(255,122,162,0.35); }
-    .btn:active { transform: translateY(1px); }
-    .btn.secondary { background:#6c8cff; box-shadow: 0 4px 12px rgba(108,140,255,0.35); }
-    .btn.warn { background:#ff8b6c; box-shadow: 0 4px 12px rgba(255,139,108,0.35); }
-    .btn.smol { min-width: 90px; padding: 10px 14px; font-size: 16px; }
+    .layout { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 16px; }
+    @media (max-width: 980px) { .layout { grid-template-columns: 1fr; } }
 
-    label { font-weight: 700; }
-    select, input[type="number"] { font-size:18px; padding:10px 12px; border-radius:10px; border:2px solid #e9f0ff; background:#f7fbff; }
-    .no-shrink { flex-shrink:0; }
+    .toolbar { display: grid; grid-template-columns: 1fr auto auto; gap: 12px; align-items: center; padding: 12px; }
 
-    .section-title { font-size: 18px; font-weight: 800; margin-bottom: 8px; }
-    .hr { height:1px; background:#f0f0f0; margin: 14px 0; }
+    .input { position: relative; }
+    .input input {
+      width: 100%; padding: 12px 14px 12px 44px; border-radius: 12px; border: 1px solid var(--card-border);
+      background: rgba(0,0,0,0.35); color: var(--text); outline: none; box-shadow: inset 0 0 0 1px rgba(0,255,208,0.25);
+    }
+    .input svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); opacity: .9; color: var(--primary); }
 
-    .status { font-weight: 800; color:#5f6eff; background:#eef0ff; border-radius: 999px; padding: 6px 10px; }
-    .muted { color:#666; }
+    .btn { border: 1px solid var(--card-border); background: linear-gradient(180deg, rgba(0,255,208,0.2), rgba(0,255,208,0.08)); color: var(--text); padding: 10px 14px; border-radius: 12px; cursor: pointer; font-weight: 700; letter-spacing: .02em; transition: transform .08s ease, box-shadow .2s ease, border-color .2s ease; box-shadow: 0 0 0 1px rgba(0,255,208,0.45), 0 8px 30px rgba(0,255,208,0.22); }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 8px 26px rgba(102,179,255,0.35), 0 0 0 2px rgba(102,179,255,0.45) inset; }
+    .btn:disabled { opacity: .6; cursor: not-allowed; filter: grayscale(.2); }
+    .btn.primary { border-color: rgba(102,179,255,0.7); box-shadow: 0 0 0 1px rgba(102,179,255,0.6), 0 8px 30px rgba(102,179,255,0.3); }
+    .btn.danger { border-color: rgba(255,107,107,0.6); background: linear-gradient(180deg, rgba(255,107,107,0.2), rgba(255,107,107,0.08)); box-shadow: 0 0 0 1px rgba(255,107,107,0.5), 0 8px 30px rgba(255,107,107,0.25); }
 
-    .pill { display:inline-flex; align-items:center; gap:6px; background:#fff; border:2px dashed #ffd1e2; border-radius: 999px; padding: 8px 12px; }
+    .chips { grid-column: 1 / -1; display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+    .chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; background: var(--chip-bg); border: 1px solid var(--card-border); box-shadow: 0 0 0 1px rgba(102,179,255,0.25); }
+    .chip b { color: var(--text); }
+    .chip button { border: none; background: transparent; color: var(--danger); cursor: pointer; font-weight: 900; padding: 0 4px; border-radius: 8px; box-shadow: none; }
+    .chip button:hover { filter: drop-shadow(0 0 6px rgba(255,107,107,0.6)); }
 
-    /* 新增：快速重播方格 */
-    .gridWords { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
-    .chipWord { font-size:16px; padding:10px 12px; border:2px solid #ffd1e2; background:#fff; border-radius:999px; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.04); }
-    .chipWord:active { transform: translateY(1px); }
+    .stage { padding: 16px; }
+    .stage-inner { display: grid; grid-template-rows: auto auto 1fr auto; gap: 12px; }
+    .canvas-wrap { position: relative; border-radius: 16px; overflow: hidden; padding: 14px; background: radial-gradient(600px 300px at 20% 20%, rgba(0,255,208,0.12), transparent 60%); border: 1px solid rgba(0,255,208,0.35); box-shadow: 0 0 0 1px rgba(0,255,208,0.35), inset 0 0 40px rgba(0,255,208,0.12); }
+    canvas { display: block; width: 100%; height: auto; border-radius: 12px; background: radial-gradient(800px 600px at 85% 20%, rgba(102,179,255,0.12), transparent 60%), radial-gradient(800px 600px at 15% 80%, rgba(255,102,245,0.12), transparent 60%), #0e1326; outline: 1px solid rgba(255,255,255,0.08); box-shadow: inset 0 0 80px rgba(0,0,0,0.6); }
+
+    .result { text-align: center; font-size: 18px; color: var(--muted); }
+    .result .name { color: var(--primary); font-size: 22px; font-weight: 900; text-shadow: 0 0 14px rgba(0,255,208,0.8); }
+
+    .list { padding: 16px; height: 100%; display: grid; grid-template-rows: auto 1fr; gap: 10px; }
+    .list h3 { margin: 6px 6px 0; font-weight: 800; letter-spacing: .02em; color: var(--muted); }
+    .scroll { border: 1px solid var(--card-border); background: rgba(0,0,0,0.35); border-radius: 14px; overflow: hidden; height: 100%; box-shadow: inset 0 0 0 1px rgba(102,179,255,0.2); }
+    ul { list-style: none; padding: 6px 8px; margin: 0; max-height: 520px; overflow-y: auto; }
+    li { padding: 10px 12px; border-bottom: 1px dashed rgba(255,255,255,0.12); display: flex; align-items: center; gap: 8px; }
+    li::before { content: "●"; color: var(--primary-2); font-size: 10px; text-shadow: 0 0 10px rgba(102,179,255,0.9); }
+    .badge { margin-left: auto; font-size: 12px; color: var(--primary); opacity: .9; }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="card">
-      <div class="header">
-        <div style="font-size:30px">🎈🐣✨</div>
-        <div class="title">可愛默書 Dictation</div>
-        <span class="chip">中英皆可 · 粵語朗讀 ×3（可自選次數）</span>
-      </div>
-      <div class="row" style="margin-top:6px">
-        <div class="muted">輸入中文或英文詞語（逗號或每行一個）</div>
-      </div>
-      <textarea id="wordInput" placeholder="例：\n尋寶\n超級市場\napple, banana, orange"></textarea>
+  <div class="grid-overlay"></div>
+  <header>
+    <div class="brand">抽籤開始，<span class="glow">祝你好運</span></div>
+  </header>
 
-      <div class="hr"></div>
-      <div class="section-title">⏱️ 設定</div>
-      <div class="card" style="background:#fffefe">
-        <div class="row">
-          <label for="countdown">開始前倒數（0–10 秒）：</label>
-          <select id="countdown" class="no-shrink">
-            <option value="0">0</option><option value="1">1</option><option value="2">2</option>
-            <option value="3" selected>3</option><option value="4">4</option><option value="5">5</option>
-            <option value="6">6</option><option value="7">7</option><option value="8">8</option>
-            <option value="9">9</option><option value="10">10</option>
-          </select>
-        </div>
-        <div class="row">
-          <label for="repeatGap">同一詞語的朗讀間隔（3–10 秒）：</label>
-          <select id="repeatGap" class="no-shrink">
-            <option value="3" selected>3</option><option value="4">4</option><option value="5">5</option>
-            <option value="6">6</option><option value="7">7</option><option value="8">8</option>
-            <option value="9">9</option><option value="10">10</option>
-          </select>
-        </div>
-        <div class="row">
-          <label for="wordGap">詞語之間的間隔（3–15 秒）：</label>
-          <select id="wordGap" class="no-shrink">
-            <option value="3" selected>3</option><option value="4">4</option><option value="5">5</option>
-            <option value="6">6</option><option value="7">7</option><option value="8">8</option>
-            <option value="9">9</option><option value="10">10</option><option value="11">11</option>
-            <option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option>
-          </select>
-        </div>
-        <div class="row">
-          <label for="repeatCount">每個詞語重複次數（1–5 次）：</label>
-          <select id="repeatCount" class="no-shrink">
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3" selected>3</option>
-            <option value="4">4</option>
-            <option value="5">5</option>
-          </select>
-        </div>
-        <div class="row">
-          <label for="rateSelect">語速（0.7–1.3）：</label>
-          <select id="rateSelect" class="no-shrink">
-            <option value="0.7">0.7（較慢）</option>
-            <option value="0.85">0.85</option>
-            <option value="1.0" selected>1.0（正常）</option>
-            <option value="1.1">1.1</option>
-            <option value="1.2">1.2（較快）</option>
-            <option value="1.3">1.3（更快）</option>
-          </select>
-        </div>
-        <div class="row">
-          <label for="langMode">語音模式：</label>
-          <select id="langMode" class="no-shrink">
-            <option value="auto" selected>自動（中文→粵語、英文→英語）</option>
-            <option value="yue">全部用粵語</option>
-            <option value="en">全部用英語</option>
-          </select>
-        </div>
+  <section class="panel">
+    <div class="card toolbar">
+      <div class="input">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z" stroke="currentColor" stroke-opacity="0.9" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <input id="name-input" type="text" placeholder="輸入名字後按 Enter 新增至名單（可刪除）" autofocus />
       </div>
-
-      <div class="hr"></div>
-      <div class="section-title">🗣️ 語音（只保留更自然的英語）</div>
-      <div class="card" style="background:#f7fbff;border:2px solid #e9f0ff">
-        <div class="row">
-          <div class="pill">
-            <span>🇭🇰 粵語語音：</span>
-            <select id="voiceYue" class="no-shrink"></select>
-            <button id="testYue" class="btn smol secondary">試聽</button>
-          </div>
-        </div>
-        <div class="row">
-          <div class="pill">
-            <span>🇬🇧/🇺🇸 英語語音（白名單）：</span>
-            <select id="voiceEn" class="no-shrink"></select>
-            <button id="testEn" class="btn smol secondary">試聽</button>
-          </div>
-          <div class="muted">保留：Google US/UK English、Microsoft Aria/Sonia、iOS Samantha/Karen</div>
-        </div>
-      </div>
-
-      <div class="hr"></div>
-      <div class="section-title">✨ 快速重播（點選任何詞語）</div>
-      <div id="gridWords" class="gridWords card" style="padding:12px;"></div>
-
-      <div class="hr"></div>
-      <div class="row">
-        <button id="startBtn" class="btn no-shrink">🟣 開始</button>
-        <button id="stopBtn" class="btn warn no-shrink" disabled>🛑 停止</button>
-        <span id="status" class="status">待命</span>
-      </div>
-      <div class="row"><span class="muted">預覽：</span><span id="preview" class="muted">（沒有內容）</span></div>
+      <button id="draw-btn" class="btn primary" disabled>開始抽籤</button>
+      <button id="share-btn" class="btn" disabled>分享抽籤</button>
+      <div id="chip-list" class="chips"></div>
     </div>
-  </div>
+  </section>
+
+  <section class="panel card">
+    <div class="layout">
+      <div class="stage">
+        <div class="stage-inner">
+          <div class="canvas-wrap">
+            <canvas id="lotteryCanvas" width="700" height="560"></canvas>
+          </div>
+          <div class="result">目前狀態：<span id="result-box">請先輸入名字</span>
+            <span class="name" id="result-name"></span>
+          </div>
+        </div>
+      </div>
+      <aside class="list">
+        <h3>中籤名單</h3>
+        <div class="scroll">
+          <ul id="history-list"></ul>
+        </div>
+      </aside>
+    </div>
+  </section>
 
   <script>
-    // --- Utilities ---
-    function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
-    function isCJK(s){ return /[\u3400-\u9FFF\uF900-\uFAFF]/.test(s); }
-    function parseWords(raw){ return raw.split(/\n|,|，|；|;|\t/).map(w=>w.trim()).filter(Boolean); }
+    let names = [];
+    const canvas = document.getElementById('lotteryCanvas');
+    const ctx = canvas.getContext('2d');
+    const drawBtn = document.getElementById('draw-btn');
+    const shareBtn = document.getElementById('share-btn');
+    const resultBox = document.getElementById('result-box');
+    const resultName = document.getElementById('result-name');
+    const historyList = document.getElementById('history-list');
+    const nameInput = document.getElementById('name-input');
+    const chipList = document.getElementById('chip-list');
 
-    // --- Elements ---
-    const wordInput = document.getElementById('wordInput');
-    const countdown = document.getElementById('countdown');
-    const repeatGap = document.getElementById('repeatGap');
-    const wordGap = document.getElementById('wordGap');
-    const repeatCount = document.getElementById('repeatCount');
-    const rateSelect = document.getElementById('rateSelect');
-    const langMode = document.getElementById('langMode');
-    const startBtn = document.getElementById('startBtn');
-    const stopBtn = document.getElementById('stopBtn');
-    const statusEl = document.getElementById('status');
-    const preview = document.getElementById('preview');
-    const voiceYueSel = document.getElementById('voiceYue');
-    const voiceEnSel = document.getElementById('voiceEn');
-    const testYueBtn = document.getElementById('testYue');
-    const testEnBtn = document.getElementById('testEn');
-    const gridWords = document.getElementById('gridWords');
+    let cols = 1, rows = 1, cellW, cellH;
+    let removedIndices = new Set();
+    let rollingInterval = null; // 全域唯一的 rollingInterval
+    let finalIndex = -1;        // 全域唯一的 finalIndex
 
-    const SETTINGS_KEY = 'cute_dictation_settings_v4';
-
-    function updatePreview(){
-      const list = parseWords(wordInput.value);
-      preview.textContent = list.length ? list.join(' · ') : '（沒有內容）';
-      renderGrid(list);
-    }
-    wordInput.addEventListener('input', ()=>{ updatePreview(); saveSettings(); });
-
-    // --- Voice preferences (DECLARE BEFORE USE) ---
-    const preferEnOrder = [
-      /microsoft aria.*english \(united states\)/i,
-      /microsoft sonia.*english \(great britain\)/i,
-      /google uk english/i,
-      /google us english/i,
-      /samantha/i, // iOS en-US
-      /karen/i     // iOS en-AU
-    ];
-    const whitelistEn = [
-      /google (us|uk) english/i,
-      /microsoft aria.*english/i,
-      /microsoft sonia.*english/i,
-      /samantha/i,
-      /karen/i
-    ];
-
-    // --- SpeechSynthesis voices ---
-    let voices = [];
-
-    function bestEnglish(voices){
-      const list = voices.filter(v => /^en/i.test(v.lang) && whitelistEn.some(rx => rx.test((v.name + ' ' + v.lang))));
-      for(const rule of preferEnOrder){
-        const hit = list.find(v => rule.test((v.name + ' ' + v.lang)));
-        if(hit) return hit;
-      }
-      return list[0] || null;
-    }
-
-    function bestCantonese(voices){
-      const yue = voices.filter(v => /yue|zh[-_]?HK|cantonese|粵/.test((v.lang + ' ' + v.name).toLowerCase()));
-      if (yue[0]) return yue[0];
-      const zh = voices.filter(v => /zh[-_](hk|tw|mo)|hant/i.test(v.lang));
-      return zh[0] || null;
-    }
-
-    function renderVoiceOptions(){
-      voiceYueSel.innerHTML = '';
-      voiceEnSel.innerHTML = '';
-
-      voices.forEach((v, idx)=>{
-        const opt = document.createElement('option');
-        opt.value = idx;
-        opt.textContent = `${v.name} (${v.lang})`;
-        if (/yue|zh[-_]?HK|cantonese|粵|zh[-_]tw|hant/i.test((v.lang + ' ' + v.name))) {
-          voiceYueSel.appendChild(opt.cloneNode(true));
-        }
-        if (/^en/i.test(v.lang) && whitelistEn.some(rx => rx.test((v.name + ' ' + v.lang)))) {
-          voiceEnSel.appendChild(opt);
-        }
+    function renderChips() {
+      chipList.innerHTML = '';
+      names.forEach((n, idx) => {
+        const chip = document.createElement('span');
+        chip.className = 'chip';
+        chip.innerHTML = `<b>${n}</b> <button title="刪除" data-idx="${idx}">×</button>`;
+        chipList.appendChild(chip);
       });
-
-      // defaults
-      const bYue = bestCantonese(voices);
-      const bEn  = bestEnglish(voices);
-      if (bYue){
-        const yOpt = Array.from(voiceYueSel.options).find(o=>voices[o.value|0]===bYue);
-        if (yOpt) yOpt.selected = true;
-      }
-      if (bEn){
-        const eOpt = Array.from(voiceEnSel.options).find(o=>voices[o.value|0]===bEn);
-        if (eOpt) eOpt.selected = true;
-      }
-
-      // restore saved indices
-      const saved = loadSettings();
-      if (saved) {
-        if (saved.voiceYueIndex != null && voices[saved.voiceYueIndex]) {
-          const yOpt = Array.from(voiceYueSel.options).find(o => (o.value|0) === saved.voiceYueIndex);
-          if (yOpt) yOpt.selected = true;
-        }
-        if (saved.voiceEnIndex != null && voices[saved.voiceEnIndex]) {
-          const eOpt = Array.from(voiceEnSel.options).find(o => (o.value|0) === saved.voiceEnIndex);
-          if (eOpt) yOpt && (eOpt.selected = true);
-        }
-      }
-    }
-
-    function loadVoices(){
-      voices = window.speechSynthesis.getVoices();
-      renderVoiceOptions();
-    }
-    window.speechSynthesis.onvoiceschanged = loadVoices;
-
-    function speakOnce(text, mode){
-      return new Promise(resolve=>{
-        const u = new SpeechSynthesisUtterance(text);
-        let voice = null;
-        const rate = parseFloat(rateSelect.value) || 1.0;
-        if (mode === 'yue') {
-          const idx = voiceYueSel.value|0; voice = voices[idx] || bestCantonese(voices);
-          if (voice) u.voice = voice; u.lang = voice ? voice.lang : 'zh-HK'; u.rate = rate; u.pitch = 1.0;
-        } else if (mode === 'en') {
-          const idx = voiceEnSel.value|0; voice = voices[idx] || bestEnglish(voices);
-          if (voice) u.voice = voice; u.lang = voice ? voice.lang : 'en-US'; u.rate = rate; u.pitch = 1.0;
-        } else {
-          if (isCJK(text)) {
-            const idx = voiceYueSel.value|0; voice = voices[idx] || bestCantonese(voices);
-            if (voice) u.voice = voice; u.lang = voice ? voice.lang : 'zh-HK'; u.rate = rate; u.pitch = 1.0;
-          } else {
-            const idx = voiceEnSel.value|0; voice = voices[idx] || bestEnglish(voices);
-            if (voice) u.voice = voice; u.lang = voice ? voice.lang : 'en-US'; u.rate = rate; u.pitch = 1.0;
-          }
-        }
-        u.onend = resolve; window.speechSynthesis.speak(u);
-      });
-    }
-
-    testYueBtn.addEventListener('click', ()=>{
-      const text = '你好，測試粵語發音。';
-      speakOnce(text, 'yue');
-    });
-    testEnBtn.addEventListener('click', ()=>{
-      const text = 'Hello! This is a natural English voice test.';
-      speakOnce(text, 'en');
-    });
-
-    // --- 快速重播邏輯 ---
-    const priorityQueue = [];
-    function renderGrid(list){
-      gridWords.innerHTML = '';
-      list.forEach(w => {
-        const b = document.createElement('button');
-        b.className = 'chipWord';
-        b.textContent = w;
-        b.title = '點我：立即重播此詞語（依設定重複次數）';
-        b.addEventListener('click', ()=>{
-          priorityQueue.push(w);
-          statusEl.textContent = '已加入重播：'+w;
+      // 綁定刪除
+      chipList.querySelectorAll('button[data-idx]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const i = parseInt(e.currentTarget.getAttribute('data-idx'));
+          names.splice(i, 1);
+          setupGrid();
+          renderChips();
         });
-        gridWords.appendChild(b);
       });
     }
 
-    async function processPriorityIfAny(rGapMs){
-      const repeatN = Math.min(5, Math.max(1, parseInt(repeatCount.value,10) || 3));
-      while(priorityQueue.length){
-        const w = priorityQueue.shift();
-        const mode = langMode.value;
-        statusEl.textContent = '快速重播：'+w;
-        for(let r=0;r<repeatN;r++){
-          await speakOnce(w, mode);
-          if (r<repeatN-1){ const until = Date.now()+rGapMs; while(Date.now()<until){ await sleep(30);} }
-        }
+    // 高亮框
+    function highlightCell(x, y, w, h) {
+      ctx.save();
+      const g = ctx.createLinearGradient(x, y, x+w, y+h);
+      g.addColorStop(0, 'rgba(0,255,208,0.95)');
+      g.addColorStop(1, 'rgba(102,179,255,0.95)');
+      ctx.strokeStyle = g; ctx.lineWidth = 3; ctx.shadowColor = 'rgba(0,255,208,0.85)'; ctx.shadowBlur = 22; ctx.strokeRect(x+2, y+2, w-4, h-4);
+      ctx.restore();
+    }
+
+    function setupGrid() {
+      cols = Math.max(1, Math.ceil(Math.sqrt(names.length)));
+      rows = Math.max(1, Math.ceil(names.length / cols));
+      cellW = canvas.width / cols; cellH = canvas.height / rows;
+      removedIndices.clear();
+      drawGrid();
+      drawBtn.disabled = names.length === 0;
+      shareBtn.disabled = true;
+      resultBox.textContent = names.length ? '按「開始抽籤」' : '請先輸入名字';
+      resultName.textContent = '';
+    }
+
+    function getAvailableIndices() { return names.map((_, i) => i).filter(i => !removedIndices.has(i)); }
+
+    function drawGrid(highlightIndex = -1) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      names.forEach((name, i) => {
+        const col = i % cols; const row = Math.floor(i / cols);
+        const x = col * cellW; const y = row * cellH;
+        const played = removedIndices.has(i);
+        const bgGrad = ctx.createLinearGradient(x, y, x + cellW, y + cellH);
+        if (played) { bgGrad.addColorStop(0, 'rgba(255,255,255,0.05)'); bgGrad.addColorStop(1, 'rgba(255,255,255,0.03)'); }
+        else { bgGrad.addColorStop(0, 'rgba(102,179,255,0.2)'); bgGrad.addColorStop(1, 'rgba(0,255,208,0.2)'); }
+        ctx.fillStyle = bgGrad; ctx.fillRect(x, y, cellW, cellH);
+        ctx.strokeStyle = 'rgba(255,255,255,0.14)'; ctx.lineWidth = 1; ctx.strokeRect(x, y, cellW, cellH);
+        ctx.fillStyle = played ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.95)';
+        ctx.font = '800 16px system-ui, -apple-system, Segoe UI, Roboto, PingFang TC, Noto Sans TC, Arial';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(name, x + cellW/2, y + cellH/2);
+        if (i === highlightIndex) highlightCell(x, y, cellW, cellH);
+      });
+    }
+
+    // Web Audio 嗶聲
+    let audioCtx;
+    function playBeep(freq = 1250, ms = 60, gain = 0.035) {
+      try {
+        audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+        const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+        o.type = 'square'; o.frequency.value = freq; g.gain.value = gain; o.connect(g); g.connect(audioCtx.destination);
+        o.start(); setTimeout(() => { o.stop(); }, ms);
+      } catch (e) {}
+    }
+
+    // Enter 新增 / Backspace 快速刪除最後一筆
+    nameInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const name = nameInput.value.trim();
+        if (!name) return;
+        names.push(name);
+        nameInput.value = '';
+        setupGrid();
+        renderChips();
+        playBeep(900, 80, 0.03);
       }
-    }
-
-    // --- Run logic ---
-    function setUIRunning(r){
-      startBtn.disabled = r; stopBtn.disabled = !r;
-      // 允許開始後仍可輸入新詞語
-      countdown.disabled = r; repeatGap.disabled = r; wordGap.disabled = r; repeatCount.disabled = r; rateSelect.disabled = r; langMode.disabled = r;
-      voiceYueSel.disabled = r; voiceEnSel.disabled = r; testYueBtn.disabled = r; testEnBtn.disabled = r;
-    }
-
-    let stopFlag = false;
-
-    async function run(){
-      if (!parseWords(wordInput.value).length){ alert('請先輸入詞語'); return; }
-      saveSettings();
-      stopFlag = false; setUIRunning(true);
-
-      let cd = parseInt(countdown.value,10)||0;
-      for(let t=cd; t>0; t--){ if (stopFlag) break; statusEl.textContent = '倒數：'+t; await sleep(1000); }
-      if (stopFlag){ statusEl.textContent='已停止'; setUIRunning(false); return; }
-      statusEl.textContent='開始';
-
-      const rGap = (parseInt(repeatGap.value,10)||3)*1000;
-      const wGap = (parseInt(wordGap.value,10)||3)*1000;
-      const mode = langMode.value;
-      const repeatN = Math.min(5, Math.max(1, parseInt(repeatCount.value,10) || 3));
-
-      for(let i=0; ; i++){
-        const list = parseWords(wordInput.value);
-        if (i >= list.length) break;
-        if (stopFlag) break; const w = list[i];
-        statusEl.textContent = '朗讀：'+w+'  ('+(i+1)+'/'+list.length+')';
-        for(let r=0;r<repeatN;r++){
-          if (stopFlag) break; await speakOnce(w, mode);
-          if (r<repeatN-1){ const until = Date.now()+rGap; while(Date.now()<until){ if(stopFlag) break; await processPriorityIfAny(120); await sleep(30); } }
-        }
-        if (stopFlag) break;
-        if (i<list.length-1){ statusEl.textContent='間隔中… ('+Math.round(wGap/1000)+'s)'; const untilW=Date.now()+wGap; while(Date.now()<untilW){ if(stopFlag) break; await processPriorityIfAny(120); await sleep(30);} }
+      if (e.key === 'Backspace' && !nameInput.value) {
+        names.pop();
+        setupGrid();
+        renderChips();
+        playBeep(650, 60, 0.03);
       }
-
-      // 完成前，處理任何尚未播放的快速重播
-      await processPriorityIfAny(120);
-
-      if(!stopFlag) statusEl.textContent='完成';
-      setUIRunning(false);
-    }
-
-    startBtn.addEventListener('click', run);
-    stopBtn.addEventListener('click', ()=>{ stopFlag = true; try{ speechSynthesis.cancel(); }catch(e){} statusEl.textContent='已停止'; setUIRunning(false); });
-
-    // --- Save/Load settings ---
-    function saveSettings(){
-      const data = {
-        countdown: countdown.value,
-        repeatGap: repeatGap.value,
-        wordGap: wordGap.value,
-        repeatCount: repeatCount.value,
-        rate: rateSelect.value,
-        langMode: langMode.value,
-        words: wordInput.value,
-        voiceYueIndex: voiceYueSel.value|0,
-        voiceEnIndex: voiceEnSel.value|0
-      };
-      localStorage.setItem(SETTINGS_KEY, JSON.stringify(data));
-    }
-    function loadSettings(){
-      try{
-        const raw = localStorage.getItem(SETTINGS_KEY); if(!raw) return null;
-        const data = JSON.parse(raw);
-        countdown.value = data.countdown || countdown.value;
-        repeatGap.value = data.repeatGap || repeatGap.value;
-        wordGap.value = data.wordGap || wordGap.value;
-        repeatCount.value = data.repeatCount || repeatCount.value;
-        rateSelect.value = data.rate || rateSelect.value;
-        langMode.value = data.langMode || langMode.value;
-        wordInput.value = data.words || wordInput.value; updatePreview();
-        return data;
-      }catch(e){ return null; }
-    }
-
-    [countdown, repeatGap, wordGap, repeatCount, rateSelect, langMode, wordInput, voiceYueSel, voiceEnSel].forEach(el=>{
-      el.addEventListener('change', saveSettings);
-      el.addEventListener('input', saveSettings);
     });
 
-    // Initial load
-    loadVoices();
-    loadSettings();
-    updatePreview();
+    // 抽籤流程（不重複）
+    drawBtn.addEventListener('click', () => {
+      const available = getAvailableIndices();
+      if (!available.length) { resultBox.textContent = '所有人已抽完'; drawBtn.disabled = true; return; }
+      drawBtn.disabled = true; shareBtn.disabled = true; resultBox.textContent = '抽籤中…'; resultName.textContent = '';
+      let currentIndex = -1; const duration = 2000 + Math.random() * 2000; const stepMs = 100;
+      // 使用全域 rollingInterval，不再重新宣告
+      rollingInterval = setInterval(() => {
+        const avail = getAvailableIndices(); currentIndex = avail[Math.floor(Math.random() * avail.length)];
+        drawGrid(currentIndex); playBeep(1300, 40, 0.03);
+      }, stepMs);
+      setTimeout(() => {
+        clearInterval(rollingInterval);
+        finalIndex = currentIndex; removedIndices.add(finalIndex);
+        drawGrid(finalIndex); resultBox.textContent = '中籤者：'; resultName.textContent = names[finalIndex];
+        playBeep(900, 80, 0.035); setTimeout(() => playBeep(1500, 100, 0.04), 90);
+        const li = document.createElement('li'); li.innerHTML = `<span>${names[finalIndex]}</span><span class="badge">✓</span>`; historyList.appendChild(li);
+        drawBtn.disabled = false; shareBtn.disabled = false;
+      }, duration);
+    });
 
-    // --- Minimal console tests (do not affect UI) ---
-    (function(){
-      try {
-        // Test whitelist
-        const mockVoices = [
-          { name:'Random Voice', lang:'en-GB' },
-          { name:'Google UK English', lang:'en-GB' },
-          { name:'Microsoft Aria Online (Natural) - English (United States)', lang:'en-US' },
-          { name:'Samantha', lang:'en-US' },
-          { name:'Karen', lang:'en-AU' },
-        ];
-        const whitelistEn = [/google (us|uk) english/i,/microsoft aria.*english/i,/microsoft sonia.*english/i,/samantha/i,/karen/i];
-        const whitelisted = mockVoices.filter(v => /^en/i.test(v.lang) && whitelistEn.some(rx => rx.test((v.name + ' ' + v.lang))));
-        console.assert(whitelisted.length === 4, '[TEST] whitelistEn 應該只保留 4 個英語聲線');
+    // 分享
+    shareBtn.addEventListener('click', () => {
+      if (finalIndex < 0) { alert('請先完成一次抽籤'); return; }
+      const text = `抽籤結果\n中籤者：${names[finalIndex]}`;
+      if (navigator.share) navigator.share({ title: '抽籤結果', text });
+      else navigator.clipboard.writeText(text).then(() => alert('結果已複製到剪貼簿'));
+    });
 
-        // Test repeat count bounds
-        const testVals = [0,1,3,5,9];
-        const clamped = testVals.map(v=> Math.min(5, Math.max(1, v)));
-        console.assert(JSON.stringify(clamped) === JSON.stringify([1,1,3,5,5]), '[TEST] repeat count 應在 1~5 之間');
-      } catch (e) { console.error('[TEST] Error running tests:', e); }
-    })();
+    // ===== 開發用小測試（顯示於 Console） =====
+    function selfTest() {
+      console.group('[自動化測試]');
+      console.assert(typeof rollingInterval !== 'undefined', 'rollingInterval 應已在全域宣告');
+      console.assert(typeof drawGrid === 'function', 'drawGrid 應為函式');
+      console.assert(typeof setupGrid === 'function', 'setupGrid 應為函式');
+      // 模擬加入名字
+      const len0 = names.length; names.push('TestUser'); setupGrid();
+      console.assert(names.length === len0 + 1, '加入名字應使名單+1');
+      // 撤回
+      names.pop(); setupGrid();
+      console.assert(names.length === len0, '刪除最後一名應回復原長度');
+      console.groupEnd();
+    }
+    window.__selfTest = selfTest;
+
+    // 初始
+    renderChips();
+    drawGrid();
+    // 自動執行一次簡單檢查
+    selfTest();
   </script>
 </body>
 </html>
